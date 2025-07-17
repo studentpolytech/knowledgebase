@@ -1,0 +1,47 @@
+{% extends "kb/base.html" %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <h1 class="display-4">
+        {% if user.is_authenticated %}
+            Добро пожаловать, {{ user.username }}!
+        {% else %}
+            Добро пожаловать в базу знаний!
+        {% endif %}
+    </h1>
+    
+    <div class="mt-4">
+        {% if user.is_authenticated %}
+            <p class="lead">
+                {% if user.user_type == 'ADMIN' %}
+                    <span class="badge bg-danger mb-2">Вы вошли как Администратор</span><br>
+                {% elif user.user_type == 'MANAGER' %}
+                    <span class="badge bg-warning mb-2">Менеджер отдела: {{ user.department.name }}</span><br>
+                {% else %}
+                    Сотрудник отдела: <strong>{{ user.department.name }}</strong>
+                {% endif %}
+            </p>
+            
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                {% if user.user_type == 'ADMIN' %}
+                    <a href="/admin/" class="btn btn-danger btn-lg">
+                        Панель администратора
+                    </a>
+                {% endif %}
+                <a href="{% url 'document_list' %}" class="btn btn-primary btn-lg">
+                    Перейти к документам
+                </a>
+                <a href="{% url 'logout' %}" class="btn btn-outline-dark btn-lg">Выйти</a>
+            </div>
+            
+        {% else %}
+            <p class="lead mt-4">Пожалуйста, войдите в систему</p>
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg mt-3">
+                Войти в систему
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

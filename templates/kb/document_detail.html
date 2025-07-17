@@ -1,0 +1,123 @@
+{% extends "kb/base.html" %}
+
+{% block title %}{{ document.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ document.title }}</h2>
+
+    {% if user == document.author or user.user_type == 'ADMIN' or can_manage_documents %}
+        <div class="mb-3">
+            <a href="{% url 'document_update' slug=document.slug %}" class="btn btn-outline-warning">
+                ✏️ Редактировать документ
+            </a>
+            <form method="post" action="{% url 'document_delete' slug=document.slug %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Удалить этот документ?');">
+                    🗑️ Удалить документ
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
+    <p class="text-muted">
+        Автор:
+        <strong>{{ document.author.get_full_name|default:document.author.username }}</strong>
+        |
+        Роль:
+        {% if document.author.user_type == 'ADMIN' %}
+            Администратор
+        {% elif document.author.user_type == 'MANAGER' %}
+            Менеджер
+        {% else %}
+            Сотрудник
+        {% endif %}
+        |
+        Отдел: {{ document.department.name }}
+        |
+        Категория: {{ document.category.name }}
+        |
+        Дата: {{ document.created_at|date:"d.m.Y H:i" }}
+    </p>
+
+    <hr>
+
+    <div class="mb-4" style="word-break: break-word; white-space: pre-wrap;">
+        {{ document.content|linebreaks }}
+    </div>
+
+    {% if document.file %}
+        <div class="mb-4">
+            <a href="{{ document.file.url }}" class="btn btn-outline-primary" target="_blank">
+                <i class="bi bi-file-earmark"></i> Скачать файл ({{ document.extension|upper }})
+            </a>
+        </div>
+    {% endif %}
+
+    <h5 class="mt-5">Комментарии:</h5>
+
+    {% if comments %}
+        <ul class="list-group mb-4">
+            {% for comment in comments %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                            <span class="text-muted">({{ comment.created_at|date:"d.m.Y H:i" }})</span><br>
+                            <small class="text-muted">
+                                Роль:
+                                {% if comment.author.user_type == 'ADMIN' %}
+                                    Администратор
+                                {% elif comment.author.user_type == 'MANAGER' %}
+                                    Менеджер
+                                {% else %}
+                                    Сотрудник
+                                {% endif %}
+                                |
+                                Отдел: {{ comment.author.department.name }}
+                            </small>
+                        </div>
+                        {% if comment.author == user or can_delete_comments %}
+                            <form method="post" action="{% url 'delete_comment' pk=comment.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                <button type="submit" name="delete_comment" class="btn btn-sm btn-outline-danger">Удалить</button>
+                            </form>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2">{{ comment.text }}</div>
+                    {% if comment.link %}
+                        <div class="mt-2">
+                            <a href="{{ comment.link }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                🔗 Ссылка на шаблон/документ
+                            </a>
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="alert alert-secondary">Комментариев пока нет.</div>
+    {% endif %}
+
+    {% if can_add_comment %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Добавить комментарий</h5>
+                <form method="post" action="{% url 'add_comment' document.slug %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <textarea name="text" class="form-control" rows="3" placeholder="Ваш комментарий..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <input type="url" name="link" class="form-control" 
+                               placeholder="https://example.com">
+                        <small class="text-muted">Можно прикрепить ссылку на шаблон или пример документа</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
