@@ -15,15 +15,35 @@ class DocumentForm(forms.ModelForm):
     def clean_file(self):
         file = self.cleaned_data.get('file')
         if file:
-            # Определяем тип файла по расширению
             mime_type, _ = mimetypes.guess_type(file.name)
 
             allowed_types = [
+                # Документы
                 'application/pdf',
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/msword',  # .doc
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # .docx
+                'application/vnd.ms-excel',  # .xls
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
+                'text/csv',
+                'text/plain',
+                'application/rtf',
+                'application/vnd.oasis.opendocument.text',  # .odt
+                'application/vnd.ms-powerpoint',  # .ppt
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',  # .pptx
+
+                # Изображения
                 'image/jpeg',
-                'image/png'
+                'image/png',
+                'image/gif',
+                'image/bmp',
+                'image/tiff',
+                'image/webp',
+                'image/svg+xml',
+
+                # Архивы
+                'application/zip',
+                'application/x-rar-compressed',
+                'application/x-7z-compressed',
             ]
 
             if mime_type not in allowed_types:
@@ -33,6 +53,7 @@ class DocumentForm(forms.ModelForm):
                 raise ValidationError("Файл слишком большой (максимум 10MB)")
 
         return file
+
 
 
 class CommentForm(forms.ModelForm):

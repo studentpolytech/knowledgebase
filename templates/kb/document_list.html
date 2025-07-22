@@ -33,10 +33,19 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Поиск по документам:</label>
+                    <input type="text" id="search" name="q" class="form-control"
+                           placeholder="Введите ключевое слово"
+                           value="{{ query }}">
+                </div>
+
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary">Применить</button>
                 </div>
-                {% if request.GET.category %}
+
+                {% if request.GET.category or request.GET.q %}
                     <div class="col-auto">
                         <a href="{% url 'document_list' %}" class="btn btn-outline-secondary">Сбросить</a>
                     </div>
@@ -48,7 +57,13 @@
     {% if documents %}
         <div class="list-group">
             {% for doc in documents %}
-                <a href="{% url 'document_detail' doc.slug %}" class="list-group-item list-group-item-action">
+                {% if doc.slug %}
+                    <a href="{% url 'document_detail' doc.slug %}" class="list-group-item list-group-item-action">
+                {% else %}
+                    <div class="list-group-item list-group-item-action text-danger">
+                        ⚠️ Ошибка: отсутствует slug
+                {% endif %}
+
                     <div class="d-flex w-100 justify-content-between">
                         <h5 class="mb-1">{{ doc.title }}</h5>
                         <small class="text-muted">{{ doc.created_at|date:"d.m.Y H:i" }}</small>
@@ -65,13 +80,18 @@
                             </small>
                         {% endif %}
                     </div>
-                </a>
+
+                {% if doc.slug %}
+                    </a>
+                {% else %}
+                    </div>
+                {% endif %}
             {% endfor %}
         </div>
     {% else %}
         <div class="alert alert-info mt-4">
             <h4 class="alert-heading">Нет документов</h4>
-            <p>В выбранной категории документы не найдены.</p>
+            <p>По выбранной категории или запросу документы не найдены.</p>
             {% if can_add_document %}
                 <hr>
                 <a href="{% url 'document_create' %}" class="btn btn-success">

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from .models import Document, Comment, Department, Category
+from django.db.models import Q
 
 
 @login_required(login_url='/accounts/login/')
@@ -31,11 +32,14 @@ def select_department(request):
 
 @login_required
 def document_list(request):
-    """Список документов"""
+    """Список документов с фильтрацией и поиском"""
     if request.user.user_type == 'EMPLOYEE' and not request.user.department:
         return render(request, 'kb/access_denied.html', {
             'message': 'Ваш аккаунт не привязан к отделу. Обратитесь к администратору.'
         })
+
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category')
 
     if request.user.user_type == 'ADMIN':
         documents = Document.objects.filter(is_published=True)
@@ -45,9 +49,13 @@ def document_list(request):
             department=request.user.department
         )
 
-    categories = Category.objects.filter(department=request.user.department) if request.user.department else Category.objects.all()
+    # Поиск по тексту
+    if query:
+        documents = documents.filter(
+            Q(title__icontains=query) | Q(content__icontains=query)
+        )
 
-    category_id = request.GET.get('category')
+    # Фильтр по категории
     selected_category = None
     if category_id:
         try:
@@ -56,12 +64,15 @@ def document_list(request):
         except (ValueError, Category.DoesNotExist):
             selected_category = None
 
+    categories = Category.objects.filter(department=request.user.department) if request.user.department else Category.objects.all()
+
     return render(request, 'kb/document_list.html', {
         'documents': documents,
         'categories': categories,
         'selected_category': selected_category,
         'can_add_document': request.user.has_perm('kb.manage_documents') or
-                            request.user.user_type in ['MANAGER', 'ADMIN']
+                            request.user.user_type in ['MANAGER', 'ADMIN'],
+        'query': query
     })
 
 

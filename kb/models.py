@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.text import slugify
 from django.core.validators import FileExtensionValidator
 from django.contrib.auth.models import AbstractUser
+from unidecode import unidecode
 
 # === DEPARTMENT ===
 class Department(models.Model):
@@ -72,15 +73,16 @@ class Document(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            # Генерируем slug из title, добавляя timestamp для уникальности
-            base_slug = slugify(self.title)
+            # Транслитерация + slugify
+            base_slug = slugify(unidecode(self.title))
             unique_slug = base_slug
             timestamp = int(time.time())
             while Document.objects.filter(slug=unique_slug).exists():
                 unique_slug = f"{base_slug}-{timestamp}"
                 timestamp += 1
             self.slug = unique_slug
-        super().save(*args, **kwargs) #изменено на автоматисческое добавление адреса при создании документа
+        super().save(*args, **kwargs)
+
 
     def extension(self):
         return os.path.splitext(self.file.name)[1][1:].lower() if self.file else None
